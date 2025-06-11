@@ -120,11 +120,12 @@ When processing is successful, you'll see logs like:
 ```
 2025/06/11 15:45:33 Received video message: ID=test-123, URL=https://...
 2025/06/11 15:45:34 Downloading video from URL: https://...
-2025/06/11 15:45:35 Processing video test-123 to 720p resolution
-2025/06/11 15:45:40 Processing video test-123 to 480p resolution
-2025/06/11 15:45:45 Processing video test-123 to 360p resolution
-2025/06/11 15:45:50 Uploading HLS files for video test-123
-2025/06/11 15:45:55 Successfully processed video test-123
+2025/06/11 15:45:35 Processing video test-123 to 1080p resolution
+2025/06/11 15:45:40 Processing video test-123 to 720p resolution
+2025/06/11 15:45:45 Processing video test-123 to 480p resolution
+2025/06/11 15:45:50 Processing video test-123 to 360p resolution
+2025/06/11 15:45:55 Uploading HLS files for video test-123
+2025/06/11 15:46:00 Successfully processed video test-123
 ```
 
 ## Output Structure
@@ -134,6 +135,11 @@ Processed videos are stored in MinIO with the following structure:
 ```
 videos/
 ├── {video-id}/
+│   ├── 1080p/
+│   │   ├── playlist.m3u8
+│   │   ├── segment_000.ts
+│   │   ├── segment_001.ts
+│   │   └── ...
 │   ├── 720p/
 │   │   ├── playlist.m3u8
 │   │   ├── segment_000.ts

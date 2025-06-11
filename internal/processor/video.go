@@ -43,7 +43,7 @@ func (vp *VideoProcessor) ProcessVideo(msg queue.VideoMessage) error {
 	}
 
 	// Process video to different resolutions
-	resolutions := []string{"720p", "480p", "360p"}
+	resolutions := []string{"1080p", "720p", "480p", "360p"}
 	for _, resolution := range resolutions {
 		log.Printf("Processing video %s to %s resolution", msg.ID, resolution)
 		err := vp.processResolution(originalPath, tempDir, msg.ID, resolution)
@@ -95,6 +95,8 @@ func (vp *VideoProcessor) downloadVideo(url, tempDir, filename string) (string, 
 func (vp *VideoProcessor) processResolution(inputPath, tempDir, videoID, resolution string) error {
 	var height string
 	switch resolution {
+	case "1080p":
+		height = "1080"
 	case "720p":
 		height = "720"
 	case "480p":
