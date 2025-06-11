@@ -8,7 +8,7 @@ This guide provides detailed instructions for deploying the ms-videos microservi
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/ms-videos.git
+git clone https://github.com/saulotarsobc/ms-videos.git
 cd ms-videos
 
 # Build and deploy

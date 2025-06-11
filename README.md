@@ -41,99 +41,100 @@ An event-driven microservice that processes videos by converting them to multipl
 1. Clone the repository
 2. Copy `.env` file and adjust if needed
 3. Start the infrastructure:
-   ```bash
-   docker-compose up rabbitmq minio minio-setup -d
-   ```
+
+```bash
+docker-compose up rabbitmq minio minio-setup -d
+```
 4. Run the service locally:
-   ```bash
-   go run cmd/ms-videos/main.go
-   ```
+```bash
+go run cmd/ms-videos/main.go
+```
 
 ## Build & Deploy
 
 ### Docker Build
 
 1. **Build the Docker image:**
-   ```bash
-   docker build -t ms-videos:latest .
-   ```
+```bash
+docker build -t ms-videos:latest .
+```
 
 2. **Tag for registry (optional):**
-   ```bash
-   docker tag ms-videos:latest your-registry.com/ms-videos:latest
-   ```
+```bash
+docker tag ms-videos:latest your-registry.com/ms-videos:latest
+```
 
 3. **Push to registry (optional):**
-   ```bash
-   docker push your-registry.com/ms-videos:latest
-   ```
+```bash
+docker push your-registry.com/ms-videos:latest
+```
 
 ### Local Binary Build
 
 1. **Build for current platform:**
-   ```bash
-   go build -o ms-videos cmd/ms-videos/main.go
-   ```
+```bash
+go build -o ms-videos.exe cmd/ms-videos/main.go
+```
 
 2. **Build for Linux (for server deployment):**
-   ```bash
-   GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
-   ```
+```bash
+GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
+```
 
 ### Production Deployment
 
 #### Using Docker Compose (Recommended)
 
 1. **Deploy all services:**
-   ```bash
-   docker-compose up -d
-   ```
+```bash
+docker-compose up -d
+```
 
 2. **Check services status:**
-   ```bash
-   docker-compose ps
-   ```
+```bash
+docker-compose ps
+```
 
 3. **View logs:**
-   ```bash
-   docker-compose logs -f ms-videos
-   ```
+```bash
+docker-compose logs -f ms-videos
+```
 
 #### Manual Deployment
 
 1. **Ensure FFmpeg is installed on the server:**
-   ```bash
-   # Ubuntu/Debian
+```bash
+# Ubuntu/Debian
    sudo apt update && sudo apt install -y ffmpeg
    
    # CentOS/RHEL
    sudo yum install -y epel-release
    sudo yum install -y ffmpeg
-   ```
+```
 
 2. **Set production environment variables:**
-   ```bash
-   export RABBITMQ_URL="amqp://user:password@your-rabbitmq-server:5672/"
+```bash
+export RABBITMQ_URL="amqp://user:password@your-rabbitmq-server:5672/"
    export MINIO_ENDPOINT="your-minio-server:9000"
    export MINIO_ACCESS_KEY="your-access-key"
    export MINIO_SECRET_KEY="your-secret-key"
    export MINIO_BUCKET="videos"
-   ```
+```
 
 3. **Run the binary:**
-   ```bash
-   ./ms-videos-linux
-   ```
+```bash
+./ms-videos-linux
+```
 
 #### Using systemd (Linux)
 
 1. **Create systemd service file:**
-   ```bash
-   sudo nano /etc/systemd/system/ms-videos.service
-   ```
+```bash
+sudo nano /etc/systemd/system/ms-videos.service
+```
 
 2. **Service configuration:**
-   ```ini
+```ini
    [Unit]
    Description=MS Videos Service
    After=network.target
@@ -154,15 +155,15 @@ An event-driven microservice that processes videos by converting them to multipl
    
    [Install]
    WantedBy=multi-user.target
-   ```
+```
 
 3. **Enable and start service:**
-   ```bash
-   sudo systemctl daemon-reload
+```bash
+sudo systemctl daemon-reload
    sudo systemctl enable ms-videos
    sudo systemctl start ms-videos
    sudo systemctl status ms-videos
-   ```
+```
 
 ### Production Considerations
 
@@ -198,20 +199,20 @@ MINIO_BUCKET=videos
 
 1. **Start the infrastructure:**
 
-   ```bash
-   docker-compose up rabbitmq minio minio-setup -d
-   ```
+```bash
+docker-compose up rabbitmq minio minio-setup -d
+```
 
 2. **Run the microservice:**
 
-   ```bash
-   go run cmd/ms-videos/main.go
-   ```
+```bash
+go run cmd/ms-videos/main.go
+```
 
 3. **Send a test video for processing:**
-   ```bash
-   go run test/send_message.go test-123 "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" sample.mp4
-   ```
+```bash
+go run test/send_message.go test-123 "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" sample.mp4
+```
 
 ### Test Script Usage
 
