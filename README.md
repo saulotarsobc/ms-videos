@@ -256,7 +256,8 @@ When processing is successful, you'll see logs like:
 2025/06/11 15:45:40 Processing video test-123 to 720p resolution
 2025/06/11 15:45:45 Processing video test-123 to 480p resolution
 2025/06/11 15:45:50 Processing video test-123 to 360p resolution
-2025/06/11 15:45:55 Uploading HLS files for video test-123
+2025/06/11 15:45:55 Creating master playlist for video test-123
+2025/06/11 15:45:56 Uploading HLS files for video test-123
 2025/06/11 15:46:00 Successfully processed video test-123
 ```
 
@@ -267,20 +268,57 @@ Processed videos are stored in MinIO with the following structure:
 ```
 videos/
 ├── {video-id}/
+│   ├── master.m3u8          # Master playlist (adaptive bitrate)
 │   ├── 1080p/
-│   │   ├── playlist.m3u8
+│   │   ├── playlist.m3u8    # 1080p stream playlist
 │   │   ├── segment_000.ts
 │   │   ├── segment_001.ts
 │   │   └── ...
 │   ├── 720p/
-│   │   ├── playlist.m3u8
+│   │   ├── playlist.m3u8    # 720p stream playlist
 │   │   ├── segment_000.ts
 │   │   ├── segment_001.ts
 │   │   └── ...
 │   ├── 480p/
-│   │   ├── playlist.m3u8
+│   │   ├── playlist.m3u8    # 480p stream playlist
 │   │   └── segments...
 │   └── 360p/
-│       ├── playlist.m3u8
+│       ├── playlist.m3u8    # 360p stream playlist
 │       └── segments...
 ```
+
+## Adaptive Bitrate Streaming
+
+O sistema gera um **master playlist** (`master.m3u8`) que permite streaming adaptativo. Este arquivo contém informações sobre todas as resoluções disponíveis e suas respectivas larguras de banda:
+
+```m3u8
+#EXTM3U
+#EXT-X-VERSION:3
+
+#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080
+1080p/playlist.m3u8
+
+#EXT-X-STREAM-INF:BANDWIDTH=3000000,RESOLUTION=1280x720
+720p/playlist.m3u8
+
+#EXT-X-STREAM-INF:BANDWIDTH=1500000,RESOLUTION=854x480
+480p/playlist.m3u8
+
+#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360
+360p/playlist.m3u8
+```
+
+### Como usar:
+
+1. **Para streaming adaptativo**: Use o arquivo `master.m3u8`
+   - URL: `https://your-minio-server/videos/{video-id}/master.m3u8`
+   - O player automaticamente escolhe a melhor resolução baseada na conexão
+
+2. **Para resolução específica**: Use o playlist da resolução desejada
+   - URL: `https://your-minio-server/videos/{video-id}/720p/playlist.m3u8`
+
+### Larguras de Banda:
+- **1080p**: 5 Mbps (1920x1080)
+- **720p**: 3 Mbps (1280x720)
+- **480p**: 1.5 Mbps (854x480)
+- **360p**: 800 Kbps (640x360)

@@ -52,6 +52,13 @@ func (vp *VideoProcessor) ProcessVideo(msg queue.VideoMessage) error {
 		}
 	}
 
+	// Create master playlist
+	log.Printf("Creating master playlist for video %s", msg.ID)
+	err = vp.createMasterPlaylist(tempDir, msg.ID, resolutions)
+	if err != nil {
+		return fmt.Errorf("failed to create master playlist: %w", err)
+	}
+
 	// Upload all HLS files to MinIO
 	log.Printf("Uploading HLS files for video %s", msg.ID)
 	err = vp.uploadHLSFiles(tempDir, msg.ID)
@@ -193,5 +200,69 @@ func (vp *VideoProcessor) uploadHLSFiles(tempDir, videoID string) error {
 
 	log.Printf("All HLS files uploaded successfully for video %s", videoID)
 	return nil
+}
+
+func (vp *VideoProcessor) createMasterPlaylist(tempDir, videoID string, resolutions []string) error {
+	hlsDir := filepath.Join(tempDir, "hls")
+	masterPath := filepath.Join(hlsDir, "master.m3u8")
+
+	file, err := os.Create(masterPath)
+	if err != nil {
+		return fmt.Errorf("failed to create master playlist: %w", err)
+	}
+	defer file.Close()
+
+	// Write HLS master playlist header
+	_, err = file.WriteString("#EXTM3U\n")
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString("#EXT-X-VERSION:3\n\n")
+	if err != nil {
+		return err
+	}
+
+	// Add each resolution as a stream variant
+	for _, resolution := range resolutions {
+		bandwidth, width, height := getStreamInfo(resolution)
+		
+		// Write stream info
+		streamInfo := fmt.Sprintf("#EXT-X-STREAM-INF:BANDWIDTH=%d,RESOLUTION=%dx%d\n", bandwidth, width, height)
+		_, err = file.WriteString(streamInfo)
+		if err != nil {
+			return err
+		}
+		
+		// Write playlist path
+		playlistPath := fmt.Sprintf("%s/playlist.m3u8\n", resolution)
+		_, err = file.WriteString(playlistPath)
+		if err != nil {
+			return err
+		}
+		
+		// Add blank line for readability
+		_, err = file.WriteString("\n")
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Printf("Master playlist created successfully for video %s", videoID)
+	return nil
+}
+
+func getStreamInfo(resolution string) (bandwidth, width, height int) {
+	switch resolution {
+	case "1080p":
+		return 5000000, 1920, 1080 // 5 Mbps
+	case "720p":
+		return 3000000, 1280, 720  // 3 Mbps
+	case "480p":
+		return 1500000, 854, 480   // 1.5 Mbps
+	case "360p":
+		return 800000, 640, 360    // 800 Kbps
+	default:
+		return 1000000, 640, 360   // Default
+	}
 }
 
