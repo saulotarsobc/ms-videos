@@ -6,7 +6,7 @@ An event-driven microservice that processes videos by converting them to multipl
 
 - Listens to RabbitMQ queue for video processing requests
 - Downloads videos from public URLs
-- Converts videos to 720p, 480p, and 360p resolutions
+- Converts videos to 1080p, 720p, 480p, and 360p resolutions
 - Fragments videos using HLS format (.m3u8 + .ts segments)
 - Uploads processed files to MinIO/S3 storage
 - Graceful shutdown handling
@@ -49,10 +49,141 @@ An event-driven microservice that processes videos by converting them to multipl
    go run cmd/ms-videos/main.go
    ```
 
-## Production Deployment
+## Build & Deploy
 
-```bash
-docker-compose up -d
+### Docker Build
+
+1. **Build the Docker image:**
+   ```bash
+   docker build -t ms-videos:latest .
+   ```
+
+2. **Tag for registry (optional):**
+   ```bash
+   docker tag ms-videos:latest your-registry.com/ms-videos:latest
+   ```
+
+3. **Push to registry (optional):**
+   ```bash
+   docker push your-registry.com/ms-videos:latest
+   ```
+
+### Local Binary Build
+
+1. **Build for current platform:**
+   ```bash
+   go build -o ms-videos cmd/ms-videos/main.go
+   ```
+
+2. **Build for Linux (for server deployment):**
+   ```bash
+   GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
+   ```
+
+### Production Deployment
+
+#### Using Docker Compose (Recommended)
+
+1. **Deploy all services:**
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Check services status:**
+   ```bash
+   docker-compose ps
+   ```
+
+3. **View logs:**
+   ```bash
+   docker-compose logs -f ms-videos
+   ```
+
+#### Manual Deployment
+
+1. **Ensure FFmpeg is installed on the server:**
+   ```bash
+   # Ubuntu/Debian
+   sudo apt update && sudo apt install -y ffmpeg
+   
+   # CentOS/RHEL
+   sudo yum install -y epel-release
+   sudo yum install -y ffmpeg
+   ```
+
+2. **Set production environment variables:**
+   ```bash
+   export RABBITMQ_URL="amqp://user:password@your-rabbitmq-server:5672/"
+   export MINIO_ENDPOINT="your-minio-server:9000"
+   export MINIO_ACCESS_KEY="your-access-key"
+   export MINIO_SECRET_KEY="your-secret-key"
+   export MINIO_BUCKET="videos"
+   ```
+
+3. **Run the binary:**
+   ```bash
+   ./ms-videos-linux
+   ```
+
+#### Using systemd (Linux)
+
+1. **Create systemd service file:**
+   ```bash
+   sudo nano /etc/systemd/system/ms-videos.service
+   ```
+
+2. **Service configuration:**
+   ```ini
+   [Unit]
+   Description=MS Videos Service
+   After=network.target
+   
+   [Service]
+   Type=simple
+   User=videos
+   WorkingDirectory=/opt/ms-videos
+   ExecStart=/opt/ms-videos/ms-videos
+   Restart=always
+   RestartSec=5
+   
+   Environment=RABBITMQ_URL=amqp://user:password@rabbitmq-server:5672/
+   Environment=MINIO_ENDPOINT=minio-server:9000
+   Environment=MINIO_ACCESS_KEY=your-access-key
+   Environment=MINIO_SECRET_KEY=your-secret-key
+   Environment=MINIO_BUCKET=videos
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. **Enable and start service:**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable ms-videos
+   sudo systemctl start ms-videos
+   sudo systemctl status ms-videos
+   ```
+
+### Production Considerations
+
+- **Resource Requirements:** Ensure adequate CPU, memory, and disk space for video processing
+- **FFmpeg:** Must be available in the system PATH
+- **Network:** Stable internet connection for downloading source videos
+- **Storage:** Configure MinIO/S3 with appropriate backup and retention policies
+- **Monitoring:** Implement logging and monitoring for the service
+- **Security:** Use strong credentials and secure network configurations
+- **Scaling:** Consider horizontal scaling for high-volume processing
+
+### Environment Configuration for Production
+
+Create a `.env` file for production:
+
+```env
+RABBITMQ_URL=amqp://production-user:strong-password@rabbitmq.example.com:5672/
+MINIO_ENDPOINT=minio.example.com:9000
+MINIO_ACCESS_KEY=production-access-key
+MINIO_SECRET_KEY=production-secret-key
+MINIO_BUCKET=videos
 ```
 
 ## Services
