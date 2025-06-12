@@ -229,11 +229,12 @@ go run cmd/ms-videos/main.go
 
 ```bash
 go run test/send_message.go test-123 "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" test-123.mp4;
-> http://localhost:9000/videos/test-123/master.m3u8
+# http://localhost:9000/videos/test-123/master.m3u8
 go run test/send_message.go jw-01 "https://akamd1.jw-cdn.org/sg2/p/640e48e/2/o/jwbvod25_T_20_r720P.mp4" jw-01.mp4;
-> http://localhost:9000/videos/jw-01/master.m3u8
-
+# http://localhost:9000/videos/jw-01/master.m3u8
 ```
+
+> Teste em [livepush.io](https://livepush.io/hlsplayer/index.html)
 
 ### Uso do Script de Teste
 
