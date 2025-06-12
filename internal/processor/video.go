@@ -1,50 +1,66 @@
+// Package processor contém a lógica principal para processamento de vídeos
+// Responsável por baixar vídeos, converter para diferentes resoluções e gerar streams HLS
 package processor
 
+// Importações necessárias para o processamento de vídeos
 import (
-	"fmt"
-	"io"
-	"log"
-	"ms-videos/internal/queue"
-	"ms-videos/internal/storage"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+	"fmt"                               // Para formatação de strings
+	"io"                                // Para operações de entrada/saída
+	"log"                               // Para logging
+	"ms-videos/internal/queue"          // Para estruturas de mensagens da fila
+	"ms-videos/internal/storage"        // Para cliente de armazenamento
+	"net/http"                          // Para downloads HTTP
+	"os"                                // Para operações do sistema operacional
+	"os/exec"                           // Para execução de comandos externos (ffmpeg)
+	"path/filepath"                     // Para manipulação de caminhos de arquivos
+	"strings"                           // Para manipulação de strings
 )
 
+// VideoProcessor é uma struct que encapsula a lógica de processamento de vídeos
+// Em Go, structs são como classes em outras linguagens
 type VideoProcessor struct {
+	// storageClient é um ponteiro para o cliente MinIO
+	// O * indica que é um ponteiro, não uma cópia da struct
 	storageClient *storage.MinIOClient
 }
 
+// NewVideoProcessor é uma função construtora que cria uma nova instância de VideoProcessor
+// Em Go, é comum usar funções New* como construtores
+// O & retorna o endereço de memória da struct (cria um ponteiro)
 func NewVideoProcessor(storageClient *storage.MinIOClient) *VideoProcessor {
 	return &VideoProcessor{
 		storageClient: storageClient,
 	}
 }
 
+// ProcessVideo controla o fluxo de trabalho para processar um vídeo incluindo
+// download, processamento de resoluções, criação de playlist mestre e upload
 func (vp *VideoProcessor) ProcessVideo(msg queue.VideoMessage) error {
 	log.Printf("Starting processing video %s", msg.ID)
 
-	// Create temporary directory for this video
+	// Cria um diretório temporário para armazenar arquivos durante o processamento
+	// O padrão "video_{ID}_*" ajuda a identificar facilmente os arquivos temporários
 	tempDir, err := os.MkdirTemp("", fmt.Sprintf("video_%s_*", msg.ID))
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
+	// defer com função anônima para limpeza automática dos arquivos temporários
+	// Isso garante que os arquivos serão removidos mesmo se houver erro
 	defer func() {
 		log.Printf("Cleaning up temporary files for video %s", msg.ID)
-		os.RemoveAll(tempDir)
+		os.RemoveAll(tempDir) // Remove recursivamente o diretório e conteúdo
 	}()
 
-	// Download the original video
+	// Faz o download do vídeo original da URL fornecida
 	originalPath, err := vp.downloadVideo(msg.URL, tempDir, msg.Filename)
 	if err != nil {
 		return fmt.Errorf("failed to download video: %w", err)
 	}
 
-	// Process video to different resolutions
+	// Processa o vídeo em diferentes resoluções para streaming adaptativo
+	// HLS permite que o player escolha a melhor qualidade baseada na conexão
 	resolutions := []string{"1080p", "720p", "480p", "360p"}
-	for _, resolution := range resolutions {
+	for _, resolution := range resolutions { // range itera sobre cada elemento do slice
 		log.Printf("Processing video %s to %s resolution", msg.ID, resolution)
 		err := vp.processResolution(originalPath, tempDir, msg.ID, resolution)
 		if err != nil {
@@ -52,14 +68,16 @@ func (vp *VideoProcessor) ProcessVideo(msg queue.VideoMessage) error {
 		}
 	}
 
-	// Create master playlist
+	// Cria a playlist mestre que referencia todas as resoluções
+	// Esta é a entrada principal para o streaming HLS
 	log.Printf("Creating master playlist for video %s", msg.ID)
 	err = vp.createMasterPlaylist(tempDir, msg.ID, resolutions)
 	if err != nil {
 		return fmt.Errorf("failed to create master playlist: %w", err)
 	}
 
-	// Upload all HLS files to MinIO
+	// Faz upload de todos os arquivos HLS gerados para o armazenamento
+	// Isso inclui playlists (.m3u8) e segmentos de vídeo (.ts)
 	log.Printf("Uploading HLS files for video %s", msg.ID)
 	err = vp.uploadHLSFiles(tempDir, msg.ID)
 	if err != nil {
