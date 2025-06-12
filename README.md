@@ -1,18 +1,18 @@
 # ms-videos
 
-An event-driven microservice that processes videos by converting them to multiple resolutions and HLS format.
+Um microserviço orientado por eventos que processa vídeos convertendo-os para múltiplas resoluções e formato HLS.
 
-## Features
+## Funcionalidades
 
-- Listens to RabbitMQ queue for video processing requests
-- Downloads videos from public URLs
-- Converts videos to 1080p, 720p, 480p, and 360p resolutions
-- Fragments videos using HLS format (.m3u8 + .ts segments)
-- Uploads processed files to MinIO/S3 storage
-- Graceful shutdown handling
-- One video processed at a time (no parallel processing)
+- Escuta fila RabbitMQ para requisições de processamento de vídeo
+- Baixa vídeos de URLs públicas
+- Converte vídeos para resoluções 1080p, 720p, 480p e 360p
+- Fragmenta vídeos usando formato HLS (.m3u8 + segmentos .ts)
+- Faz upload dos arquivos processados para armazenamento MinIO/S3
+- Tratamento de desligamento gracioso
+- Processa um vídeo por vez (sem processamento paralelo)
 
-## Message Format
+## Formato da Mensagem
 
 ```json
 {
@@ -22,97 +22,109 @@ An event-driven microservice that processes videos by converting them to multipl
 }
 ```
 
-## Environment Variables
+## Variáveis de Ambiente
 
-- `RABBITMQ_URL`: RabbitMQ connection string (default: `amqp://guest:guest@localhost:5672/`)
-- `MINIO_ENDPOINT`: MinIO endpoint (default: `localhost:9000`)
-- `MINIO_ACCESS_KEY`: MinIO access key (default: `minioadmin`)
-- `MINIO_SECRET_KEY`: MinIO secret key (default: `minioadmin`)
-- `MINIO_BUCKET`: MinIO bucket name (default: `videos`)
+- `RABBITMQ_URL`: String de conexão RabbitMQ (padrão: `amqp://guest:guest@localhost:5672/`)
+- `MINIO_ENDPOINT`: Endpoint MinIO (padrão: `localhost:9000`)
+- `MINIO_ACCESS_KEY`: Chave de acesso MinIO (padrão: `minioadmin`)
+- `MINIO_SECRET_KEY`: Chave secreta MinIO (padrão: `minioadmin`)
+- `MINIO_BUCKET`: Nome do bucket MinIO (padrão: `videos`)
 
-## Prerequisites
+## Pré-requisitos
 
 - Go 1.21+
-- Docker and Docker Compose
-- FFmpeg (for local development)
+- Docker e Docker Compose
+- FFmpeg (para desenvolvimento local)
 
-## Development
+## Desenvolvimento
 
-1. Clone the repository
-2. Copy `.env` file and adjust if needed
-3. Start the infrastructure:
+1. Clone o repositório
+2. Copie o arquivo `.env` e ajuste conforme necessário
+3. Inicie a infraestrutura:
 
 ```bash
 docker-compose up rabbitmq minio minio-setup -d
 ```
-4. Run the service locally:
+
+4. Execute o serviço localmente:
+
 ```bash
 go run cmd/ms-videos/main.go
 ```
 
 ## Build & Deploy
 
-### Docker Build
+### Build Docker
 
-1. **Build the Docker image:**
+1. **Construir a imagem Docker:**
+
 ```bash
 docker build -t ms-videos:latest .
 ```
 
-2. **Tag for registry (optional):**
+2. **Marcar para registry (opcional):**
+
 ```bash
 docker tag ms-videos:latest your-registry.com/ms-videos:latest
 ```
 
-3. **Push to registry (optional):**
+3. **Enviar para registry (opcional):**
+
 ```bash
 docker push your-registry.com/ms-videos:latest
 ```
 
-### Local Binary Build
+### Build Binário Local
 
-1. **Build for current platform:**
+1. **Build para plataforma atual:**
+
 ```bash
 go build -o ms-videos.exe cmd/ms-videos/main.go
 ```
 
-2. **Build for Linux (for server deployment):**
+2. **Build para Linux (para deploy no servidor):**
+
 ```bash
 GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
 ```
 
-### Production Deployment
+### Deploy em Produção
 
-#### Using Docker Compose (Recommended)
+#### Usando Docker Compose (Recomendado)
 
-1. **Deploy all services:**
+1. **Deploy de todos os serviços:**
+
 ```bash
 docker-compose up -d
 ```
 
-2. **Check services status:**
+2. **Verificar status dos serviços:**
+
 ```bash
 docker-compose ps
 ```
 
-3. **View logs:**
+3. **Ver logs:**
+
 ```bash
 docker-compose logs -f ms-videos
 ```
 
-#### Manual Deployment
+#### Deploy Manual
 
-1. **Ensure FFmpeg is installed on the server:**
+1. **Garantir que FFmpeg está instalado no servidor:**
+
 ```bash
 # Ubuntu/Debian
 sudo apt update && sudo apt install -y ffmpeg
-   
+
 # CentOS/RHEL
 sudo yum install -y epel-release
 sudo yum install -y ffmpeg
 ```
 
-2. **Set production environment variables:**
+2. **Definir variáveis de ambiente de produção:**
+
 ```bash
 export RABBITMQ_URL="amqp://user:password@your-rabbitmq-server:5672/"
 export MINIO_ENDPOINT="your-minio-server:9000"
@@ -121,24 +133,27 @@ export MINIO_SECRET_KEY="your-secret-key"
 export MINIO_BUCKET="videos"
 ```
 
-3. **Run the binary:**
+3. **Executar o binário:**
+
 ```bash
 ./ms-videos-linux
 ```
 
-#### Using systemd (Linux)
+#### Usando systemd (Linux)
 
-1. **Create systemd service file:**
+1. **Criar arquivo de serviço systemd:**
+
 ```bash
 sudo nano /etc/systemd/system/ms-videos.service
 ```
 
-2. **Service configuration:**
+2. **Configuração do serviço:**
+
 ```ini
 [Unit]
 Description=MS Videos Service
 After=network.target
-  
+
 [Service]
 Type=simple
 User=videos
@@ -146,18 +161,19 @@ WorkingDirectory=/opt/ms-videos
 ExecStart=/opt/ms-videos/ms-videos
 Restart=always
 RestartSec=5
-   
+
 Environment=RABBITMQ_URL=amqp://user:password@rabbitmq-server:5672/
 Environment=MINIO_ENDPOINT=minio-server:9000
 Environment=MINIO_ACCESS_KEY=your-access-key
 Environment=MINIO_SECRET_KEY=your-secret-key
 Environment=MINIO_BUCKET=videos
-   
+
 [Install]
 WantedBy=multi-user.target
 ```
 
-3. **Enable and start service:**
+3. **Habilitar e iniciar serviço:**
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable ms-videos
@@ -165,19 +181,19 @@ sudo systemctl start ms-videos
 sudo systemctl status ms-videos
 ```
 
-### Production Considerations
+### Considerações de Produção
 
-- **Resource Requirements:** Ensure adequate CPU, memory, and disk space for video processing
-- **FFmpeg:** Must be available in the system PATH
-- **Network:** Stable internet connection for downloading source videos
-- **Storage:** Configure MinIO/S3 with appropriate backup and retention policies
-- **Monitoring:** Implement logging and monitoring for the service
-- **Security:** Use strong credentials and secure network configurations
-- **Scaling:** Consider horizontal scaling for high-volume processing
+- **Requisitos de Recursos:** Garantir CPU, memória e espaço em disco adequados para processamento de vídeo
+- **FFmpeg:** Deve estar disponível no PATH do sistema
+- **Rede:** Conexão à internet estável para baixar vídeos de origem
+- **Armazenamento:** Configurar MinIO/S3 com políticas adequadas de backup e retenção
+- **Monitoramento:** Implementar logging e monitoramento para o serviço
+- **Segurança:** Usar credenciais fortes e configurações de rede seguras
+- **Escalabilidade:** Considerar escalabilidade horizontal para processamento de alto volume
 
-### Environment Configuration for Production
+### Configuração de Ambiente para Produção
 
-Create a `.env` file for production:
+Criar arquivo `.env` para produção:
 
 ```env
 RABBITMQ_URL=amqp://production-user:strong-password@rabbitmq.example.com:5672/
@@ -187,67 +203,72 @@ MINIO_SECRET_KEY=production-secret-key
 MINIO_BUCKET=videos
 ```
 
-## Services
+## Serviços
 
-- **ms-videos**: Main microservice
-- **RabbitMQ**: Message queue (Management UI: http://localhost:15672)
-- **MinIO**: Object storage (Console: http://localhost:9001)
+- **ms-videos**: Microserviço principal
+- **RabbitMQ**: Fila de mensagens (Interface de Gestão: http://localhost:15672)
+- **MinIO**: Armazenamento de objetos (Console: http://localhost:9001)
 
-## Testing
+## Testes
 
-### Running the Application
+### Executando a Aplicação
 
-1. **Start the infrastructure:**
+1. **Iniciar a infraestrutura:**
 
 ```bash
 docker-compose up rabbitmq minio minio-setup -d
 ```
 
-2. **Run the microservice:**
+2. **Executar o microserviço:**
 
 ```bash
 go run cmd/ms-videos/main.go
 ```
 
-3. **Send a test video for processing:**
+3. **Enviar um vídeo de teste para processamento:**
+
 ```bash
-go run test/send_message.go test-123 "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" sample.mp4
+go run test/send_message.go test-123 "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" test-123.mp4;
+> http://localhost:9000/videos/test-123/master.m3u8
+go run test/send_message.go jw-01 "https://akamd1.jw-cdn.org/sg2/p/640e48e/2/o/jwbvod25_T_20_r720P.mp4" jw-01.mp4;
+> http://localhost:9000/videos/jw-01/master.m3u8
+
 ```
 
-### Test Script Usage
+### Uso do Script de Teste
 
-The `test/send_message.go` script allows you to send video processing requests to the RabbitMQ queue:
+O script `test/send_message.go` permite enviar requisições de processamento de vídeo para a fila RabbitMQ:
 
 ```bash
 go run test/send_message.go <video-id> <video-url> <filename>
 ```
 
-**Parameters:**
+**Parâmetros:**
 
-- `video-id`: Unique identifier for the video (will be used as folder name in MinIO)
-- `video-url`: Public URL to download the video file
-- `filename`: Original filename for the video
+- `video-id`: Identificador único para o vídeo (será usado como nome da pasta no MinIO)
+- `video-url`: URL pública para baixar o arquivo de vídeo
+- `filename`: Nome original do arquivo de vídeo
 
-**Examples:**
+**Exemplos:**
 
 ```bash
-# Process a sample video
+# Processar um vídeo de exemplo
 go run test/send_message.go video-001 "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" sample.mp4
 ```
 
-### Monitoring
+### Monitoramento
 
-After sending a message, you can monitor the processing:
+Após enviar uma mensagem, você pode monitorar o processamento:
 
-1. **Watch the microservice logs** for processing updates
-2. **RabbitMQ Management UI** (http://localhost:15672) - Login: `guest/guest`
-   - View queue status and message consumption
-3. **MinIO Console** (http://localhost:9001) - Login: `minioadmin/minioadmin`
-   - Check processed video files in the `videos` bucket
+1. **Acompanhar os logs do microserviço** para atualizações de processamento
+2. **Interface de Gestão RabbitMQ** (http://localhost:15672) - Login: `guest/guest`
+   - Ver status da fila e consumo de mensagens
+3. **Console MinIO** (http://localhost:9001) - Login: `minioadmin/minioadmin`
+   - Verificar arquivos de vídeo processados no bucket `videos`
 
-### Expected Output
+### Saída Esperada
 
-When processing is successful, you'll see logs like:
+Quando o processamento for bem-sucedido, você verá logs como:
 
 ```
 2025/06/11 15:45:33 Received video message: ID=test-123, URL=https://...
@@ -261,9 +282,9 @@ When processing is successful, you'll see logs like:
 2025/06/11 15:46:00 Successfully processed video test-123
 ```
 
-## Output Structure
+## Estrutura de Saída
 
-Processed videos are stored in MinIO with the following structure:
+Vídeos processados são armazenados no MinIO com a seguinte estrutura:
 
 ```
 videos/
@@ -311,6 +332,7 @@ O sistema gera um **master playlist** (`master.m3u8`) que permite streaming adap
 ### Como usar:
 
 1. **Para streaming adaptativo**: Use o arquivo `master.m3u8`
+
    - URL: `https://your-minio-server/videos/{video-id}/master.m3u8`
    - O player automaticamente escolhe a melhor resolução baseada na conexão
 
@@ -318,6 +340,7 @@ O sistema gera um **master playlist** (`master.m3u8`) que permite streaming adap
    - URL: `https://your-minio-server/videos/{video-id}/720p/playlist.m3u8`
 
 ### Larguras de Banda:
+
 - **1080p**: 5 Mbps (1920x1080)
 - **720p**: 3 Mbps (1280x720)
 - **480p**: 1.5 Mbps (854x480)

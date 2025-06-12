@@ -5,15 +5,18 @@ Este guia mostra como buildar e executar o microservice ms-videos localmente no 
 ## Pré-requisitos
 
 ### 1. Instalar Go
+
 - Baixe e instale Go 1.21+ de: https://golang.org/dl/
 - Verifique a instalação:
-  ```powershell
-  go version
-  ```
+
+```powershell
+go version
+```
 
 ### 2. Instalar FFmpeg
 
 #### Opção A: Usando Chocolatey (Recomendado)
+
 ```powershell
 # Instalar Chocolatey (se não tiver)
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -23,32 +26,38 @@ choco install ffmpeg
 ```
 
 #### Opção B: Download Manual
+
 1. Baixe FFmpeg de: https://www.gyan.dev/ffmpeg/builds/
 2. Extraia para `C:\ffmpeg`
 3. Adicione `C:\ffmpeg\bin` ao PATH do sistema
 4. Verifique a instalação:
+
 ```powershell
 ffmpeg -version
 ```
 
 ### 3. Instalar Docker Desktop
+
 - Baixe e instale Docker Desktop de: https://www.docker.com/products/docker-desktop/
 - Inicie o Docker Desktop
 
 ## Setup do Projeto
 
 ### 1. Clonar o Repositório
+
 ```powershell
 git clone https://github.com/saulotarsobc/ms-videos.git
 cd ms-videos
 ```
 
 ### 2. Instalar Dependências Go
+
 ```powershell
 go mod download
 ```
 
 ### 3. Iniciar Infraestrutura (RabbitMQ + MinIO)
+
 ```powershell
 # Iniciar apenas os serviços de infraestrutura
 docker-compose up rabbitmq minio minio-setup -d
@@ -69,6 +78,7 @@ go run cmd/ms-videos/main.go
 ### Opção 2: Build do Executável Windows
 
 #### Build simples:
+
 ```powershell
 # Build para Windows
 go build -o ms-videos.exe cmd/ms-videos/main.go
@@ -78,6 +88,7 @@ go build -o ms-videos.exe cmd/ms-videos/main.go
 ```
 
 #### Build com informações de versão:
+
 ```powershell
 # Build com flags de otimização
 go build -ldflags "-s -w" -o ms-videos.exe cmd/ms-videos/main.go
@@ -87,6 +98,7 @@ go build -ldflags "-s -w" -o ms-videos.exe cmd/ms-videos/main.go
 ```
 
 #### Build para diferentes arquiteturas:
+
 ```powershell
 # Para Windows 64-bit (padrão)
 $env:GOOS="windows"; $env:GOARCH="amd64"; go build -o ms-videos-win64.exe cmd/ms-videos/main.go
@@ -101,6 +113,7 @@ $env:GOOS="linux"; $env:GOARCH="amd64"; go build -o ms-videos-linux cmd/ms-video
 ## Configuração de Ambiente
 
 ### Variáveis de Ambiente Padrão
+
 O projeto usa as seguintes variáveis padrão que funcionam com o docker-compose local:
 
 ```
@@ -114,6 +127,7 @@ MINIO_BUCKET=videos
 ### Configurar Variáveis Customizadas (PowerShell)
 
 Para uma sessão:
+
 ```powershell
 $env:RABBITMQ_URL="amqp://guest:guest@localhost:5672/"
 $env:MINIO_ENDPOINT="localhost:9000"
@@ -126,6 +140,7 @@ $env:MINIO_BUCKET="videos"
 ```
 
 Usando arquivo .env (criar na raiz do projeto):
+
 ```env
 RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 MINIO_ENDPOINT=localhost:9000
@@ -139,10 +154,12 @@ MINIO_BUCKET=videos
 ### 1. Verificar se os Serviços Estão Funcionando
 
 #### RabbitMQ Management UI:
+
 - URL: http://localhost:15672
 - Login: `guest` / `guest`
 
 #### MinIO Console:
+
 - URL: http://localhost:9001
 - Login: `minioadmin` / `minioadmin`
 
@@ -206,6 +223,7 @@ if ($LASTEXITCODE -eq 0) {
 ```
 
 Executar:
+
 ```powershell
 .\build.ps1
 ```
@@ -244,7 +262,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
     Write-Host "RabbitMQ UI: http://localhost:15672 (guest/guest)" -ForegroundColor Cyan
     Write-Host "MinIO Console: http://localhost:9001 (minioadmin/minioadmin)" -ForegroundColor Cyan
-    
+
     # Executar aplicação
     .\ms-videos.exe
 } else {
@@ -253,6 +271,7 @@ if ($LASTEXITCODE -eq 0) {
 ```
 
 Executar:
+
 ```powershell
 .\run-dev.ps1
 ```
@@ -260,40 +279,48 @@ Executar:
 ## Troubleshooting
 
 ### Problema: FFmpeg não encontrado
+
 ```
 ffmpeg failed: exec: "ffmpeg": executable file not found in %PATH%
 ```
 
 **Solução:**
+
 1. Verifique se FFmpeg está instalado: `ffmpeg -version`
 2. Se não estiver no PATH, adicione manualmente ou reinstale
 
 ### Problema: Erro de conexão com RabbitMQ
+
 ```
 failed to connect to RabbitMQ: dial tcp 127.0.0.1:5672: connectex: No connection could be made
 ```
 
 **Solução:**
+
 1. Verifique se o Docker está rodando
 2. Execute: `docker-compose up rabbitmq -d`
 3. Aguarde alguns segundos e tente novamente
 
 ### Problema: Erro de conexão com MinIO
+
 ```
 failed to upload to MinIO
 ```
 
 **Solução:**
+
 1. Verifique se MinIO está rodando: `docker-compose ps`
 2. Acesse http://localhost:9001 para confirmar
 3. Execute: `docker-compose up minio minio-setup -d`
 
 ### Problema: Porta em uso
+
 ```
 Port 5672 is already in use
 ```
 
 **Solução:**
+
 1. Pare outros serviços RabbitMQ
 2. Ou altere a porta no docker-compose.yml
 
@@ -331,10 +358,10 @@ docker-compose exec minio sh
 4. **Configurar Docker** para usar mais CPU/RAM se necessário
 
 ### Configuração Docker Desktop:
+
 - Resources → Advanced
 - CPUs: 4+ (se disponível)
 - Memory: 4GB+
 - Disk image size: 60GB+
 
 Agora você pode fazer o build e executar o ms-videos localmente no Windows para desenvolvimento!
-

@@ -1,59 +1,60 @@
-# Deployment Guide
+# Guia de Deploy
 
-This guide provides detailed instructions for deploying the ms-videos microservice in production environments.
+Este guia fornece instruções detalhadas para fazer deploy do microserviço ms-videos em ambientes de produção.
 
-## Quick Start
+## Início Rápido
 
-### 1. Docker Compose (Recommended)
+### 1. Docker Compose (Recomendado)
 
 ```bash
-# Clone the repository
+# Clonar o repositório
 git clone https://github.com/saulotarsobc/ms-videos.git
 cd ms-videos
 
-# Build and deploy
+# Build e deploy
 docker-compose up -d
 
-# Check status
+# Verificar status
 docker-compose ps
 ```
 
-### 2. Manual Build and Deploy
+### 2. Build Manual e Deploy
 
 ```bash
-# Build for Linux
+# Build para Linux
 GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
 
-# Transfer to server and run
+# Transferir para servidor e executar
 scp ms-videos-linux user@server:/opt/ms-videos/
 ssh user@server
 cd /opt/ms-videos
 ./ms-videos-linux
 ```
 
-## Production Environment Setup
+## Configuração do Ambiente de Produção
 
-### Prerequisites
+### Pré-requisitos
 
-1. **Server Requirements:**
-   - Linux server (Ubuntu 20.04+ or CentOS 8+)
-   - Minimum 2 CPU cores, 4GB RAM
-   - 50GB+ storage space
-   - Docker and Docker Compose (for containerized deployment)
+1. **Requisitos do Servidor:**
 
-2. **External Services:**
-   - RabbitMQ server
-   - MinIO/S3 storage
-   - Network access to video URLs
+   - Servidor Linux (Ubuntu 20.04+ ou CentOS 8+)
+   - Mínimo 2 núcleos de CPU, 4GB RAM
+   - 50GB+ de espaço de armazenamento
+   - Docker e Docker Compose (para deploy containerizado)
 
-### Infrastructure Setup
+2. **Serviços Externos:**
+   - Servidor RabbitMQ
+   - Armazenamento MinIO/S3
+   - Acesso de rede às URLs de vídeo
 
-#### Option 1: All-in-One Docker Compose
+### Configuração da Infraestrutura
 
-1. **Create production docker-compose.yml:**
+#### Opção 1: Docker Compose Tudo-em-Um
+
+1. **Criar docker-compose.yml de produção:**
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   ms-videos:
@@ -69,7 +70,7 @@ services:
       - rabbitmq
       - minio
     volumes:
-      - /tmp:/tmp  # For temporary files
+      - /tmp:/tmp # For temporary files
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -80,7 +81,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     ports:
-      - "15672:15672"  # Management UI
+      - "15672:15672" # Management UI
 
   minio:
     image: minio/minio:latest
@@ -118,12 +119,12 @@ volumes:
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-#### Option 2: External Services
+#### Opção 2: Serviços Externos
 
-If using external RabbitMQ and MinIO/S3:
+Se usando RabbitMQ e MinIO/S3 externos:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   ms-videos:
@@ -139,37 +140,37 @@ services:
       - /tmp:/tmp
 ```
 
-### Binary Deployment (Without Docker)
+### Deploy Binário (Sem Docker)
 
-#### 1. Server Setup
+#### 1. Configuração do Servidor
 
 ```bash
-# Install FFmpeg
+# Instalar FFmpeg
 sudo apt update
 sudo apt install -y ffmpeg
 
-# Create user and directories
+# Criar usuário e diretórios
 sudo useradd -r -s /bin/false videos
 sudo mkdir -p /opt/ms-videos
 sudo chown videos:videos /opt/ms-videos
 ```
 
-#### 2. Build and Deploy
+#### 2. Build e Deploy
 
 ```bash
-# On development machine
+# Na máquina de desenvolvimento
 GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
 
-# Transfer to server
+# Transferir para servidor
 scp ms-videos-linux user@server:/opt/ms-videos/ms-videos
 ssh user@server
 sudo chown videos:videos /opt/ms-videos/ms-videos
 sudo chmod +x /opt/ms-videos/ms-videos
 ```
 
-#### 3. Systemd Service
+#### 3. Serviço Systemd
 
-Create `/etc/systemd/system/ms-videos.service`:
+Criar `/etc/systemd/system/ms-videos.service`:
 
 ```ini
 [Unit]
@@ -225,13 +226,13 @@ sudo systemctl status ms-videos
 
 ### Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| RABBITMQ_URL | RabbitMQ connection string | `amqp://user:pass@host:5672/` |
-| MINIO_ENDPOINT | MinIO/S3 endpoint | `minio.example.com:9000` |
-| MINIO_ACCESS_KEY | Access key for storage | `access-key` |
-| MINIO_SECRET_KEY | Secret key for storage | `secret-key` |
-| MINIO_BUCKET | Bucket name for videos | `videos` |
+| Variable         | Description                | Example                       |
+| ---------------- | -------------------------- | ----------------------------- |
+| RABBITMQ_URL     | RabbitMQ connection string | `amqp://user:pass@host:5672/` |
+| MINIO_ENDPOINT   | MinIO/S3 endpoint          | `minio.example.com:9000`      |
+| MINIO_ACCESS_KEY | Access key for storage     | `access-key`                  |
+| MINIO_SECRET_KEY | Secret key for storage     | `secret-key`                  |
+| MINIO_BUCKET     | Bucket name for videos     | `videos`                      |
 
 ### Production Environment File
 
@@ -245,12 +246,182 @@ MINIO_SECRET_KEY=prod-secret-key
 MINIO_BUCKET=videos
 ```
 
-## Monitoring and Maintenance
+## Monitoramento e Manutenção
 
-### Health Checks
+### Verificações de Saúde
 
-1. **Service Status:**
+1. **Status do Serviço:**
+
 ```bash
 # Docker
-...
+docker-compose ps
+docker-compose logs -f ms-videos
 
+# Systemd
+sudo systemctl status ms-videos
+sudo journalctl -u ms-videos -f
+```
+
+2. **Verificação de Componentes:**
+
+```bash
+# RabbitMQ (Interface de Gestão: http://your-server:15672)
+curl -u guest:guest http://localhost:15672/api/overview
+
+# MinIO (Console: http://your-server:9001)
+curl http://localhost:9000/minio/health/live
+```
+
+### Logs
+
+1. **Acessar Logs:**
+
+```bash
+# Docker
+docker-compose logs ms-videos
+docker-compose logs --tail=100 -f ms-videos
+
+# Systemd
+sudo journalctl -u ms-videos
+sudo journalctl -u ms-videos --since "1 hour ago"
+```
+
+### Backup
+
+1. **Backup do MinIO:**
+
+```bash
+# Usando mc (MinIO Client)
+mc mirror minio/videos /backup/videos-$(date +%Y%m%d)
+```
+
+2. **Backup de Configurações:**
+
+```bash
+# Docker Compose
+cp docker-compose.yml /backup/
+cp .env /backup/
+
+# Systemd
+cp /etc/systemd/system/ms-videos.service /backup/
+cp /opt/ms-videos/.env /backup/
+```
+
+### Atualizações
+
+1. **Atualização Docker:**
+
+```bash
+# Baixar atualizações
+git pull origin main
+
+# Rebuild e redeploy
+docker-compose build ms-videos
+docker-compose up -d ms-videos
+```
+
+2. **Atualização Binário:**
+
+```bash
+# Build nova versão
+GOOS=linux GOARCH=amd64 go build -o ms-videos-linux cmd/ms-videos/main.go
+
+# Parar serviço
+sudo systemctl stop ms-videos
+
+# Substituir binário
+scp ms-videos-linux user@server:/opt/ms-videos/ms-videos
+
+# Reiniciar serviço
+sudo systemctl start ms-videos
+sudo systemctl status ms-videos
+```
+
+## Solução de Problemas
+
+### Problemas Comuns
+
+1. **FFmpeg não encontrado:**
+
+```bash
+# Verificar instalação
+which ffmpeg
+ffmpeg -version
+
+# Instalar se necessário
+sudo apt install -y ffmpeg
+```
+
+2. **Erro de conexão RabbitMQ:**
+
+```bash
+# Verificar conectividade
+telnet rabbitmq-server 5672
+
+# Verificar credenciais
+curl -u username:password http://rabbitmq-server:15672/api/overview
+```
+
+3. **Erro de conexão MinIO:**
+
+```bash
+# Verificar conectividade
+curl http://minio-server:9000/minio/health/live
+
+# Testar acesso
+mc alias set test http://minio-server:9000 access-key secret-key
+mc ls test/
+```
+
+4. **Espaço insuficiente:**
+
+```bash
+# Verificar espaço em disco
+df -h
+
+# Limpar arquivos temporários
+sudo find /tmp -name "video_*" -type d -mtime +1 -exec rm -rf {} +
+```
+
+### Logs de Debug
+
+Para habilitar logs mais detalhados, adicione estas variáveis de ambiente:
+
+```env
+LOG_LEVEL=debug
+DEBUG=true
+```
+
+## Considerações de Segurança
+
+1. **Credenciais Fortes:**
+   - Use senhas complexas para RabbitMQ
+   - Gere chaves de acesso seguras para MinIO
+   - Rotate credenciais periodicamente
+
+2. **Rede:**
+   - Configure firewall adequadamente
+   - Use HTTPS para interfaces web
+   - Restrinja acesso a portas de gestão
+
+3. **Arquivos:**
+   - Configure permissões adequadas
+   - Use usuário dedicado sem privilégios
+   - Implement backup e retenção de dados
+
+## Performance e Escalabilidade
+
+1. **Recursos por Vídeo:**
+   - CPU: 1-2 cores por processamento
+   - RAM: 2-4GB por vídeo
+   - Disco: 3-5x o tamanho do vídeo original
+
+2. **Escalabilidade Horizontal:**
+   - Execute múltiplas instâncias do microserviço
+   - Use load balancer para RabbitMQ
+   - Configure cluster MinIO para alta disponibilidade
+
+3. **Otimizações:**
+   - Use SSDs para armazenamento temporário
+   - Configure QoS adequado no RabbitMQ
+   - Implemente limpeza automática de arquivos temporários
