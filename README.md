@@ -105,20 +105,20 @@ docker-compose logs -f ms-videos
 1. **Ensure FFmpeg is installed on the server:**
 ```bash
 # Ubuntu/Debian
-   sudo apt update && sudo apt install -y ffmpeg
+sudo apt update && sudo apt install -y ffmpeg
    
-   # CentOS/RHEL
-   sudo yum install -y epel-release
-   sudo yum install -y ffmpeg
+# CentOS/RHEL
+sudo yum install -y epel-release
+sudo yum install -y ffmpeg
 ```
 
 2. **Set production environment variables:**
 ```bash
 export RABBITMQ_URL="amqp://user:password@your-rabbitmq-server:5672/"
-   export MINIO_ENDPOINT="your-minio-server:9000"
-   export MINIO_ACCESS_KEY="your-access-key"
-   export MINIO_SECRET_KEY="your-secret-key"
-   export MINIO_BUCKET="videos"
+export MINIO_ENDPOINT="your-minio-server:9000"
+export MINIO_ACCESS_KEY="your-access-key"
+export MINIO_SECRET_KEY="your-secret-key"
+export MINIO_BUCKET="videos"
 ```
 
 3. **Run the binary:**
@@ -135,34 +135,34 @@ sudo nano /etc/systemd/system/ms-videos.service
 
 2. **Service configuration:**
 ```ini
-   [Unit]
-   Description=MS Videos Service
-   After=network.target
+[Unit]
+Description=MS Videos Service
+After=network.target
+  
+[Service]
+Type=simple
+User=videos
+WorkingDirectory=/opt/ms-videos
+ExecStart=/opt/ms-videos/ms-videos
+Restart=always
+RestartSec=5
    
-   [Service]
-   Type=simple
-   User=videos
-   WorkingDirectory=/opt/ms-videos
-   ExecStart=/opt/ms-videos/ms-videos
-   Restart=always
-   RestartSec=5
+Environment=RABBITMQ_URL=amqp://user:password@rabbitmq-server:5672/
+Environment=MINIO_ENDPOINT=minio-server:9000
+Environment=MINIO_ACCESS_KEY=your-access-key
+Environment=MINIO_SECRET_KEY=your-secret-key
+Environment=MINIO_BUCKET=videos
    
-   Environment=RABBITMQ_URL=amqp://user:password@rabbitmq-server:5672/
-   Environment=MINIO_ENDPOINT=minio-server:9000
-   Environment=MINIO_ACCESS_KEY=your-access-key
-   Environment=MINIO_SECRET_KEY=your-secret-key
-   Environment=MINIO_BUCKET=videos
-   
-   [Install]
-   WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target
 ```
 
 3. **Enable and start service:**
 ```bash
 sudo systemctl daemon-reload
-   sudo systemctl enable ms-videos
-   sudo systemctl start ms-videos
-   sudo systemctl status ms-videos
+sudo systemctl enable ms-videos
+sudo systemctl start ms-videos
+sudo systemctl status ms-videos
 ```
 
 ### Production Considerations
